@@ -30,6 +30,7 @@ public class MyGdxGame extends ApplicationAdapter {
     private long lastDropItem;
     private Array<Rectangle> Apples;
     private long lastDropApple;
+    private boolean drawBucket = true; // создаем переменную для проверки коснулось ли яблоко ведра
 
 
     private void spawnRainDrop() {
@@ -49,7 +50,7 @@ public class MyGdxGame extends ApplicationAdapter {
         Apple.width = 64;
         Apple.height = 64;
         Apples.add(Apple);
-        lastDropApple = TimeUtils.nanoTime();
+        lastDropApple = TimeUtils.millis(); // задаем время в миллисекундах
     }
 
     @Override
@@ -89,13 +90,16 @@ public class MyGdxGame extends ApplicationAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         // обновление камеры
+        batch.setProjectionMatrix(camera.combined);
 
         // указываем SpriteBatch координаты системы для камеры
         batch.begin();
-        batch.setProjectionMatrix(camera.combined);
 
-        // отрисовка ведра
-        batch.draw(bucketImage, bucket.x, bucket.y);
+        // отрисовка ведра, только в том случае, если яблоко в ведро не попало
+        if(drawBucket) {
+            batch.draw(bucketImage, bucket.x, bucket.y);
+        }
+
         for (Rectangle raindrop : rainDrops) {
             batch.draw(dropImage, raindrop.x, raindrop.y);
         }
@@ -139,7 +143,11 @@ public class MyGdxGame extends ApplicationAdapter {
         if (TimeUtils.nanoTime() - lastDropItem > 1000000000) {
             spawnRainDrop();
         }
-        if (TimeUtils.nanoTime() - lastDropApple > 2000000000) {
+
+        // берем время в миллисекундах методом millis()
+        // можно было еще преобразовать нано секунды в милли также по документации
+        // https://libgdx.badlogicgames.com/ci/nightlies/docs/api/com/badlogic/gdx/utils/TimeUtils.html
+        if (TimeUtils.millis() - lastDropApple > 4000) {
             spawnApples();
         }
 
@@ -166,12 +174,15 @@ public class MyGdxGame extends ApplicationAdapter {
 
             if (apple_loop.y + 64 < 0) {
                 itera.remove();
+            }
+
+            if (apple_loop.overlaps(bucket)) {
+                itera.remove();
+                drawBucket = false; // при касании переменная поменяет свое значение
                 bucketImage.dispose();
             }
         }
         camera.update();
-
-
     }
 
 
